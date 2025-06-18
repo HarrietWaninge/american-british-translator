@@ -1,0 +1,110 @@
+POST to api/translate    locale: british-to-american/american-to-british
+returns { text: string, translation: string}
+
+If one or more of the required fields (local?) is missing, return { error: 'Required field(s) missing' } 
+If locale does not match one of the two specified locales, return { error: 'Invalid value for locale field' }.
+If text is empty, return { error: 'No text to translate' }
+
+time: 
+american: 10:30  english 10.30
+
+honorifics:
+should translate as in american-to-british-titles
+
+spelling: should translate both ways. 
+
+american-only: words that should be picked up when locale = american-british 
+british-only: words that should be picked up when locale = british-american 
+
+any translated sentence pieces should be wrapped in <span class="highlight">...</span>
+
+If text requires no translation, return "Everything looks good to me!" for the translation value 
+(<- unclear: when a random word or letter is typed, the translation will be exactly that which is typed, not the "everything looks good.." etc
+only when something is typed that is in the american spelling files from british=>american thEn the "everything looks good.." is returned. very vague) 
+I'll build it exactly as the example application behaves.  it translates normally, but 
+when something specifically american is typed with locale english to american I'll return the "everything looks good to me" phrase. 
+
+
+
+FORMATS 
+in: 
+req.param.locale: string,   
+body.text: string
+
+out:
+error: { error: 'No text to translate' },  { error: 'Required field(s) missing' }, { error: 'Invalid value for locale field' }
+normal returns: { text: string, translation: string}
+
+
+3. 
+different types of translation work:
+two way search for time xx:xx/xx.xx   or.. maybe I should search for one side if english
+
+when locale = british-to-american, I should search the british side and search for: 
+- time:  xx.xx
+- american-to-british-titles.js and  american-to-british-spelling.js , search for value (the british side) 
+- british-only.js, search for property
+
+
+when locale = american-to-british, I should search the american side and search for: 
+- time: xx:xx
+- american-only.js , american-to-british-titles.js and  american-to-british-spelling.js , search for property (the american side)
+
+but also, I have to distinguish if there is american when searching for british-to-american... because otherwise 
+I can't do the stupid "everything looks fine to me". is that right? 
+yes. 
+so first I'll have to search Any thing, every list, and every time that is in the "suspicious" categorie. after that, 
+I should find out, through locale if the suspicious thing is to be translated or if it is 'fine by me'. (stupid stupid stupid) 
+
+so I'll have to make a test-
+
+//wat wil ik: ik wil testen of de test-string woorden bevat van éen kant van de array. 
+
+wacht. maar als ik er een object in doe weet ik niet welke kant ik op moet. dan moet ik eerst daar plannen. 
+
+ik moet eerst findTranslations(locale, textstring, object) 
+
+
+nee wacht. ik moet toch altijd alle 4 de dingen testen. 
+dus. dan kan ik net zo goed in één functie alle 4 de objecten vast zetten zodat ik weet wat wat is. 
+
+dus. 
+
+findTranslations heeft van zichzelf al in zich:
+timeRegex, alle files die getest moeten worden. 
+
+geeft een object terug met {american-to-british: {americanword: britishword, americanword: britishword}, british-to-american: {britishword:americanword, britishword: americanword}}}
+
+jjjjAh. dat is perfect. 
+also. ik moet gelijk de translation meegeven. anders moet ik die later weer zoeken. misschien dan een object.  
+goed daar denk ik zo over. 
+
+dan is de vraag, moet ik een aparte getAmericanToBritish functie en getBritisToAmerican maken
+
+liever niet. 
+
+eerst moet ik weten hoe ik moet testen. 
+op regexes dus, 
+
+
+American = get all keys and make them regexxes. then test the string on all regExes. 
+
+also make all properyNames Regexes, And values regexes. with the american to british spelling file.
+
+dus dan moet ik een functie hebben makeRegex(Object.keys()) makeRegex(Object.values()). 
+
+but then in this function findTranslations, I should really clearly seperate american-to-british word:translation british-to-american: {word:translation}
+this is gonna be great. 
+
+functions:  
+translate(textString) returns the final result
+findTranslations(textString)   returns: { american-to-british:{text:translation}, british-to-american:{text :translation}}
+makeRegex([ArrayOfStrings]) returns: RegEx 
+
+const pattern = new RegExp(`\\b(${Object.keys(americanToBritish).join('|')})\\b`, 'gi');
+
+wacht kan ik met EEn regex alles matchen? ja. dat denk ik. 
+en in de details zit dan waar en hoe ik de translation ophaal. dat figure ik dan wel uit.
+
+dan moet ik daarna nog wat functies hebben om te checken 
+in de translate function, create the function createResponse(textString, resultFromFindTranslations)
