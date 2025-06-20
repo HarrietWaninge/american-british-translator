@@ -1,3 +1,4 @@
+const { text } = require("body-parser");
 const americanOnly = require("./american-only.js");
 const americanToBritishSpelling = require("./american-to-british-spelling.js");
 const americanToBritishTitles = require("./american-to-british-titles.js");
@@ -28,11 +29,11 @@ class Translator {
     let americanTitles = Object.keys(americanToBritishTitles);
 
     this.britishTitlesRegex = new RegExp(
-      `\\b(${britishTitles.join("|")})(?!\\.)(?=[\\s,]|$)`,
+      `\\b(?<title>${britishTitles.join("|")})(?!\\.)(?=[\\s,]|$)`,
       "gi"
     );
     this.americanTitlesRegex = new RegExp(
-      `\\b(${this.escapeDots(americanTitles).join("|")})(?=[\\s,.]|$)`,
+      `\\b(?<title>${this.escapeDots(americanTitles).join("|")})(?=[\\s,.]|$)`,
       "gi"
     );
 
@@ -48,66 +49,130 @@ class Translator {
   }
 
   translate(textString, locale) {
-    this.buildTranslationReturn(textString);
+    this.buildTranslationReturn(textString, locale);
     return "We watched the soccer match for a while.";
   }
 
-  findAllSuspects(textString) {
-    let americanBits =
-      textString.match(this.americanTitlesRegex) ??
-      []
-        .concat(textString.match(this.americanTimeRegex) ?? [])
-        .concat(textString.match(this.americanWordsRegex) ?? []);
-
-    let britishBits =
-      textString.match(this.britishTitlesRegex) ??
-      []
-        .concat(textString.match(this.britishTimeRegex) ?? [])
-        .concat(textString.match(this.britishWordsRegex) ?? []);
-
-    return { american: americanBits, british: britishBits };
-  }
-
-  getTranslations(textString, locale) {
-    let allSuspects = this.findAllSuspects(textString);
-    let translation;
-    if (locale == this.locale[1]) {
-      // american-to-british, find translations of american words
-      for (let i = 0; i < allSuspects.american.length; i++) {
-        //mijn probleem: de titles hoofdletters don't translate. stelletje fuckers. they did this on purpose. they knew this.
-        let lowerCaseAmerican = allSuspects.american[i].toLowerCase();
-        console.log("LC", lowerCaseAmerican);
-        if (lowerCaseAmerican.matchAll(this.americanTimeRegex)) {
-          //handle american time
-          translation = lowerCaseAmerican.replace(
-            this.americanTimeRegex,
-            "$<hours>.$<minutes>"
-          );
-        } else if (lowerCaseAmerican.match(this.americanTitlesRegex)) {
-          console.log("HOP!", lowerCaseAmerican);
-        } else {
-          translation =
-            americanOnly[lowerCaseAmerican] ||
-            americanToBritishSpelling[lowerCaseAmerican] ||
-            americanToBritishTitles[lowerCaseAmerican];
-        }
-
-        console.log(
-          "american:",
-          allSuspects.american[i],
-          "british:",
-          translation
-        );
-      }
-    }
-  }
-
-  buildTranslationReturn(textString) {
+  buildTranslationReturn(textString, locale) {
     let translatedWords = this.getTranslations(
       textString,
       "american-to-british"
     );
   }
+
+  findToBeTranslated(textString, locale) {
+    let translationObject;
+    // get all american
+    let americanTime = textString.match(this.americanTimeRegex) ?? [];
+    let americanTitles = textString.match(this.americanTitlesRegex) ?? [];
+    let americanWordsPhrases = textString.match(this.americanWordsRegex) ?? [];
+    // get all british
+    let britishTime = textString.match(this.britishTimeRegex) ?? [];
+    let britishTitles = textString.match(this.britishTitlesRegex) ?? [];
+    let britishWordsPhrases = textString.match(this.britishWordsRegex) ?? [];
+
+    let obj = {
+      american: { americanTime, americanTitles, americanWordsPhrases },
+      british: { britishTime, britishTitles, britishWordsPhrases },
+    };
+    console.log("IN FIND TO BE", obj);
+    translationObject = this.useLocale(obj, locale);
+
+    return translationObject;
+  }
+
+  useLocale(wordsObject, locale) {
+    console.log("IN USE LOC");
+    let translationObject = {
+      toBeTranslated: { words: [], translations: [] },
+      alreadyGreat: [],
+    };
+    let { americanTime, americanTitles, americanWordsPhrases } =
+      wordsObject.american;
+    if (locale == this.locale[1]) {
+      //locale = american to british, find translations for wordsObject.american
+      for (let i = 0; i < americanTime.length; i++) {
+        translationObject.toBeTranslated.translations.push(
+          this.translateAmericanTime(americanTime[i])
+        );
+      }
+      for (let i = 0; i < americanTitles.length; i++) {
+        translationObject.toBeTranslated.translations.push(
+          this.translateAmericanTitles(americanTitles[i])
+        );
+      }
+      for (let i = 0; i < americanWordsPhrases.length; i++) {
+        translationObject.toBeTranslated.translations.push(
+          this.translateAmericanWordsPhrases(americanWordsPhrases[i])
+        );
+      }
+      console.log("TRANSL:", translationObject.toBeTranslated.translations);
+    }
+    // i'll have to translate here.
+
+    return translationObject;
+  }
+
+  translateAmericanTime(time) {
+    return time.replace(this.americanTimeRegex, "$<hours>.$<minutes>");
+  }
+  translateAmericanTitles(title) {
+    return title.replace(".", "");
+  }
+
+  translateAmericanWordsPhrases() {}
+
+  getTranslations(textString, locale) {
+    let translation;
+
+    let allSuspects = this.findToBeTranslated(textString, locale);
+    if (allSuspects.toBeTranslated.length == 0) {
+      //no words to translate
+      if (allSuspects.alreadyGreat.length > 0) {
+        // if there are any words of the to be translated to locale
+        return { text: "Everything looks good to me!" };
+      } else {
+        // no words found at all
+        return { text: textString };
+      }
+    } else {
+      for (let i = 0; i < allSuspects.toBeTranslated.length; i++) {
+        //mijn probleem: de titles hoofdletters don't translate. stelletje fuckers. they did this on purpose. they knew this.
+        let lowerCaseToBeTranslated =
+          allSuspects.toBeTranslated[i].toLowerCase();
+        console.log("LC", lowerCaseToBeTranslated);
+        if (lowerCaseToBeTranslated.matchAll(this.americanTimeRegex)) {
+          //handle american time
+          translation = lowerCaseToBeTranslated.replace(
+            this.americanTimeRegex,
+            "$<hours>.$<minutes>"
+          );
+        } else if (lowerCaseAmerican.match(this.americanTitlesRegex)) {
+          console.log("HOP!", lowerCaseToBeTranslated);
+        } else {
+          translation =
+            americanOnly[lowerCaseToBeTranslated] ||
+            americanToBritishSpelling[lowerCaseToBeTranslated] ||
+            americanToBritishTitles[lowerCaseToBeTranslated];
+        }
+
+        console.log(
+          "american:",
+          allSuspects.toBeTranslated[i],
+          "british:",
+          translation
+        );
+      }
+    }
+    if (locale == this.locale[1]) {
+      // american-to-british, find translations of american words
+    }
+  }
+
+  translateTime(textString) {
+    return time;
+  }
+
   escapeDots(stringsArray) {
     for (let i = 0; i < stringsArray.length; i++) {
       if (stringsArray[i].includes(".")) {
