@@ -16,7 +16,10 @@ suite("Unit Tests", () => {
     test("blob", (done) => {
       console.log("Brit -> Am");
       for (let i = 0; i < testSentencesBritishToAmerican.length; i++) {
-        translator.translate(testSentencesBritishToAmerican[i]);
+        translator.translate(
+          testSentencesBritishToAmerican[i],
+          "british-to-american"
+        );
         // assert.equal(
         //   translator.translate(testSentencesBritishToAmerican[i]),
         //   testSentencesAmericanTranslations[i]
@@ -25,7 +28,10 @@ suite("Unit Tests", () => {
       console.log("Am -> Brit");
 
       for (let i = 0; i < testSentencesAmericanToBritish.length; i++) {
-        translator.translate(testSentencesAmericanToBritish[i]);
+        translator.translate(
+          testSentencesAmericanToBritish[i],
+          "american-to-british"
+        );
         // assert.equal(
         //   translator.translate(testSentencesBritishToAmerican[i]),
         //   testSentencesAmericanTranslations[i]
