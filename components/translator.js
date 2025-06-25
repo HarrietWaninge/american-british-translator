@@ -50,34 +50,40 @@ const REGEXES = Object.freeze({
 
 const translationRules = [
   {
-    regex: AMERICAN_WORDS,
-    type: "words",
-    translationFunction: "translateWordsPhrases",
+    regex: REGEXES.AMERICAN_WORDS,
+    replaceRegex: REGEXES.AMERICAN_WORDS,
+    replaceWith: (match) => {
+      let lowerCase = match.toLowerCase();
+      return AM_TO_BRIT_WORDS[lowerCase];
+    },
   },
   {
-    regex: BRITISH_WORDS,
-    type: "words",
-    translationFunction: "translateWordsPhrases",
+    regex: REGEXES.BRITISH_WORDS,
+    replaceRegex: REGEXES.BRITISH_WORDS,
+    replaceWith: (match) => {
+      let lowerCase = match.toLowerCase();
+      return BRIT_TO_AM_WORDS[lowerCase];
+    },
   },
   {
-    regex: AMERICAN_TITLES,
-    type: "titles",
-    translationFunction: "translateAmericanTitles",
+    regex: REGEXES.AMERICAN_TITLES,
+    replaceRegex: /\./,
+    replaceWith: "",
   },
   {
-    regex: BRITISH_TITLES,
-    type: "titles",
-    translationFunction: "translateBritishTitles",
+    regex: REGEXES.BRITISH_TITLES,
+    replaceRegex: REGEXES.BRITISH_TITLES,
+    replaceWith: "$<title>.",
   },
   {
-    regex: AMERICAN_TIME,
-    type: "time",
-    translationFunction: "translateAmericanTime",
+    regex: REGEXES.AMERICAN_TIME,
+    replaceRegex: REGEXES.AMERICAN_TIME,
+    replaceWith: "$<hours>.$<minutes>",
   },
   {
-    regex: BRITISH_TIME,
-    type: "time",
-    translationFunction: "translateBritishTime",
+    regex: REGEXES.BRITISH_TIME,
+    replaceRegex: REGEXES.BRITISH_TIME,
+    replaceWith: "$<hours>:$<minutes>",
   },
 ];
 
@@ -141,26 +147,33 @@ class Translator {
     return translationObject;
   }
 
+  replace(regex, replacePattern, originalText) {
+    return originalText.replace(regex, replacePattern);
+  }
+
   translateAmerican(wordsObject, translationObject) {
     let { americanTime, americanTitles, americanWordsPhrases } =
       wordsObject.american;
     for (let i = 0; i < americanTime.length; i++) {
-      translationObject.toBeTranslated.translations.push(
-        this.translateAmericanTime(americanTime[i])
+      translationObject = this.pushWordAndTranslationToArray(
+        americanTime[i],
+        translationObject,
+        this.translateAmericanTime
       );
-      translationObject.toBeTranslated.words.push(americanTime[i]);
     }
     for (let i = 0; i < americanTitles.length; i++) {
-      translationObject.toBeTranslated.translations.push(
-        this.translateAmericanTitles(americanTitles[i])
+      translationObject = this.pushWordAndTranslationToArray(
+        americanTitles[i],
+        translationObject,
+        this.translateAmericanTitles
       );
-      translationObject.toBeTranslated.words.push(americanTitles[i]);
     }
     for (let i = 0; i < americanWordsPhrases.length; i++) {
-      translationObject.toBeTranslated.translations.push(
-        this.translateWordsPhrases(americanWordsPhrases[i], AM_TO_BRIT_WORDS)
+      translationObject = this.pushWordAndTranslationToArray(
+        americanWordsPhrases[i],
+        translationObject,
+        this.translateWordsPhrases
       );
-      translationObject.toBeTranslated.words.push(americanWordsPhrases[i]);
     }
     return translationObject;
   }
@@ -168,32 +181,40 @@ class Translator {
   /// this is all the same, there should be a lambda possibility here.
   // for britishTime, titles and phrases
   translateBritish(wordsObject, translationObject) {
+    console.log("TRANSLATE british:", wordsObject, translationObject);
     let { britishTime, britishTitles, britishWordsPhrases } =
       wordsObject.british;
     //locale = american to british, find translations for wordsObject.american
     for (let i = 0; i < britishTime.length; i++) {
       translationObject = this.pushWordAndTranslationToArray(
         britishTime[i],
-        translationObject
+        translationObject,
+        this.translateBritishTime
       );
     }
     for (let i = 0; i < britishTitles.length; i++) {
       translationObject = this.pushWordAndTranslationToArray(
         britishTitles[i],
-        translationObject
+        translationObject,
+        this.translateBritishTitles
       );
     }
     for (let i = 0; i < britishWordsPhrases.length; i++) {
       translationObject = this.pushWordAndTranslationToArray(
         britishWordsPhrases[i],
-        translationObject
+        translationObject,
+        this.translateWordsPhrases
       );
     }
     return translationObject;
   }
-  pushWordAndTranslationToArray(toBeTranslated, translationObject) {
+  pushWordAndTranslationToArray(
+    toBeTranslated,
+    translationObject,
+    translationFunction
+  ) {
     translationObject.toBeTranslated.translations.push(
-      this.translateBritishTime(toBeTranslated)
+      translationFunction(toBeTranslated)
     );
     translationObject.toBeTranslated.words.push(toBeTranslated);
 
@@ -204,11 +225,16 @@ class Translator {
     return time.replace(REGEXES.AMERICAN_TIME, "$<hours>.$<minutes>");
   }
   translateAmericanTitles(title) {
-    return title.replace(".", "");
+    return title.replace(/\./, "");
   }
 
-  translateWordsPhrases(wordPhrase, dictionary) {
+  translateWordsPhrases(wordPhrase) {
     //can I do this in a replace.
+
+    return wordPhrase.replace(REGEXES.AMERICAN_WORDS, (match) => {
+      let lowerCase = match.toLowerCase();
+      return AM_TO_BRIT_WORDS[lowerCase];
+    });
     let lowerCaseToBeTranslated = wordPhrase.toLowerCase();
 
     /// regex would be....
@@ -221,7 +247,7 @@ class Translator {
     return time.replace(REGEXES.BRITISH_TIME, "$<hours>:$<minutes>");
   }
   translateBritishTitles(title) {
-    return title + ".";
+    return title.replace(REGEXES.BRITISH_TITLES, "$<title>.");
   }
 
   escapeDots(stringsArray) {
