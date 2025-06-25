@@ -9,6 +9,7 @@ const escapeDots = (stringsArray) => {
     return word.replace(/\./gi, "\\.");
   });
 };
+
 const BRITISH_TITLES = Object.freeze(Object.values(americanToBritishTitles));
 const AMERICAN_TITLES = Object.freeze(Object.keys(americanToBritishTitles));
 const AM_TO_BRIT_WORDS = Object.freeze({
@@ -25,6 +26,7 @@ const BRIT_TO_AM_WORDS = Object.freeze({
     ])
   ),
 });
+
 const REGEXES = Object.freeze({
   AMERICAN_WORDS: new RegExp(
     `\\b(${Object.keys(AM_TO_BRIT_WORDS).join("|")})\\b`,
@@ -45,6 +47,39 @@ const REGEXES = Object.freeze({
   AMERICAN_TIME: new RegExp("(?<hours>\\d?\\d):(?<minutes>\\d{2})", "g"),
   BRITISH_TIME: new RegExp("(?<hours>\\d?\\d)\\.(?<minutes>\\d{2})", "g"),
 });
+
+const translationRules = [
+  {
+    regex: AMERICAN_WORDS,
+    type: "words",
+    translationFunction: "translateWordsPhrases",
+  },
+  {
+    regex: BRITISH_WORDS,
+    type: "words",
+    translationFunction: "translateWordsPhrases",
+  },
+  {
+    regex: AMERICAN_TITLES,
+    type: "titles",
+    translationFunction: "translateAmericanTitles",
+  },
+  {
+    regex: BRITISH_TITLES,
+    type: "titles",
+    translationFunction: "translateBritishTitles",
+  },
+  {
+    regex: AMERICAN_TIME,
+    type: "time",
+    translationFunction: "translateAmericanTime",
+  },
+  {
+    regex: BRITISH_TIME,
+    type: "time",
+    translationFunction: "translateBritishTime",
+  },
+];
 
 const LOCALES = Object.freeze({
   BRITISH_TO_AMERICAN: "british-to-american",
@@ -109,7 +144,6 @@ class Translator {
   translateAmerican(wordsObject, translationObject) {
     let { americanTime, americanTitles, americanWordsPhrases } =
       wordsObject.american;
-    //locale = american to british, find translations for wordsObject.american
     for (let i = 0; i < americanTime.length; i++) {
       translationObject.toBeTranslated.translations.push(
         this.translateAmericanTime(americanTime[i])
@@ -173,15 +207,17 @@ class Translator {
     return title.replace(".", "");
   }
 
-  translateWordsPhrases(wordPhrase, localeToLocaleObject) {
+  translateWordsPhrases(wordPhrase, dictionary) {
+    //can I do this in a replace.
     let lowerCaseToBeTranslated = wordPhrase.toLowerCase();
-    let translation = localeToLocaleObject[lowerCaseToBeTranslated];
+
+    /// regex would be....
+
+    let translation = dictionary[lowerCaseToBeTranslated];
     return translation;
   }
 
   translateBritishTime(time) {
-    // console.log("IT'S TIME:", time);
-    //  console.log("MATCH:", time.matchAll(this.britishTimeRegex));
     return time.replace(REGEXES.BRITISH_TIME, "$<hours>:$<minutes>");
   }
   translateBritishTitles(title) {
