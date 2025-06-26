@@ -1,4 +1,3 @@
-const { text } = require("body-parser");
 const translationRules = require("./translation-rules");
 
 class Translator {
