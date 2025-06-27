@@ -1,18 +1,48 @@
+const LOCALES = require("./constants");
 const translationRules = require("./translation-rules");
 
 class Translator {
-  translate(textString, locale) {
-    let suspects = this.findSuspects(textString);
+  translate(text, locale) {
+    console.log(text);
+    let inputError = this.checkInput(text, locale);
+    if (inputError.error) return inputError;
+
+    let suspects = this.findSuspects(text);
+    // console.log("susp:", suspects);
     let translationObject = this.getTranslationObject(suspects, locale);
-    let response = this.buildTranslationReturn(textString, translationObject);
+    //console.log("translObj", translationObject);
+    let response = this.buildTranslationReturn(text, translationObject);
+    // console.log("resp:", response);
     return response;
   }
 
-  findSuspects(textString) {
+  checkInput(text, locale) {
+    if (
+      text === null ||
+      text === undefined ||
+      locale === null ||
+      locale === undefined
+    )
+      return { error: "Required field(s) missing" };
+
+    if (
+      locale !== LOCALES.AMERICAN_TO_BRITISH &&
+      locale !== LOCALES.BRITISH_TO_AMERICAN
+    ) {
+      return { error: "Invalid value for locale field" };
+    }
+    if (text == "" || !text) {
+      return { error: "No text to translate" };
+    } else {
+      return { error: null };
+    }
+  }
+
+  findSuspects(text) {
     let allSuspects = [];
-    // push all words that match a Regex in an array
+    // push all words that match a Regex in an array with the structure { word, rule }
     translationRules.map((rule) => {
-      let matches = textString.match(rule.regex);
+      let matches = text.match(rule.regex);
       if (matches) {
         allSuspects.push(
           ...matches.map((match) => {
@@ -45,32 +75,34 @@ class Translator {
     return translationObject;
   }
 
-  buildTranslationReturn(textString, translationObject) {
+  buildTranslationReturn(text, translationObject) {
     //for clarity
+    //  console.log("FINAL TRANSLOBJ", translationObject);
     let { toBeTranslated, alreadyGreat } = translationObject;
-    let result;
-
+    let result = { text, translation: "" };
+    let translation = text;
     //if there is nothing to translate
     if (toBeTranslated.words.length == 0) {
-      //if there is something in 'already great'
-      if (alreadyGreat.length > 0) {
-        result = "Everything looks fine to me!";
-      }
-      // if there aren't words in both lists
-      else {
-        result = "Nothing to translate";
-      }
+      //   //if there is something in 'already great'
+      //   if (alreadyGreat.length > 0) {
+      //     result.translation = "Everything looks good to me!";
+      //   }
+      //   // if there aren't words in both lists
+      //   else {
+      result.translation = "Everything looks good to me!";
+      //   }
     }
     // if there is something to be translated
     else {
       for (let i = 0; i < toBeTranslated.words.length; i++) {
-        textString = textString.replace(
+        translation = translation.replace(
           toBeTranslated.words[i],
           toBeTranslated.translations[i]
         );
       }
-      result = textString;
+      result.translation = translation;
     }
+    console.log("RESULT:", result);
     return result;
   }
 }
