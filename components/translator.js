@@ -17,12 +17,7 @@ class Translator {
   }
 
   checkInput(text, locale) {
-    if (
-      text === null ||
-      text === undefined ||
-      locale === null ||
-      locale === undefined
-    )
+    if (text == null || locale == null)
       return { error: "Required field(s) missing" };
 
     if (
