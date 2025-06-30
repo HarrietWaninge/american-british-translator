@@ -72,9 +72,10 @@ class Translator {
 
   buildTranslationReturn(text, translationObject) {
     //for clarity
+    console.log(translationObject);
     //  console.log("FINAL TRANSLOBJ", translationObject);
     let { toBeTranslated, alreadyGreat } = translationObject;
-    let result = { text, translation: "" };
+    let result = { text, translation: "", translatedWords: [] };
     let translation = text;
     //if there is nothing to translate
     if (toBeTranslated.words.length == 0) {
@@ -94,6 +95,8 @@ class Translator {
           toBeTranslated.words[i],
           toBeTranslated.translations[i]
         );
+        //push new word in array for coloring
+        result.translatedWords.push(toBeTranslated.translations[i]);
       }
       result.translation = translation;
     }

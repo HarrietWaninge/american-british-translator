@@ -4,9 +4,7 @@ const assert = chai.assert;
 const server = require("../server.js");
 
 const {
-  testSentencesBritishToAmerican,
   testSentencesAmericanToBritish,
-  testSentencesAmericanTranslations,
   testSentencesBritishTranslations,
 } = require("./testingData.js");
 
