@@ -42,7 +42,6 @@ const translateHandler = async () => {
 
   return;
 };
-console.log("Button exists?", document.getElementById("translate-btn"));
 document
   .getElementById("translate-btn")
   .addEventListener("click", translateHandler);
