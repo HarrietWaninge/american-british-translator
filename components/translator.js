@@ -72,7 +72,7 @@ class Translator {
 
   buildTranslationReturn(text, translationObject) {
     //for clarity
-    console.log(translationObject);
+    //console.log(translationObject);
     //  console.log("FINAL TRANSLOBJ", translationObject);
     let { toBeTranslated, alreadyGreat } = translationObject;
     let result = { text, translation: "", translatedWords: [] };
@@ -100,7 +100,7 @@ class Translator {
       }
       result.translation = translation;
     }
-    console.log("RESULT:", result);
+    // console.log("RESULT:", result);
     return result;
   }
 }
