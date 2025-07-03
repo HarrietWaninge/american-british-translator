@@ -3,7 +3,7 @@ const translationRules = require("./translation-rules");
 
 class Translator {
   translate(text, locale) {
-    console.log(text);
+    console.log("text:", text);
     let inputError = this.checkInput(text, locale);
     if (inputError.error) return inputError;
 

@@ -48,9 +48,18 @@ const testSentencesAmericanTranslations = [
   "Prof. Joyner of King's College, London.",
   "Tea time is usually around 4 or 4:30.",
 ];
+const spanTranslations = [["favourite"], ["yoghurt"], ["soccer"], ["Tylenol"]];
+const spanTestSentences = [
+  "Mangoes are my favorite fruit.",
+  "I ate yogurt for breakfast.",
+  "We watched the footie match for a while.",
+  "Paracetamol takes up to an hour to work.",
+];
 export {
   testSentencesBritishToAmerican,
   testSentencesAmericanTranslations,
   testSentencesBritishTranslations,
   testSentencesAmericanToBritish,
+  spanTranslations,
+  spanTestSentences,
 };

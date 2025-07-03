@@ -7,7 +7,9 @@ module.exports = function (app) {
 
   app.route("/api/translate").post((req, res) => {
     try {
-      res.json(translator.translate(req.body.text, req.body.locale));
+      let response = translator.translate(req.body.text, req.body.locale);
+      console.log(req.body.text, req.body.locale, response);
+      res.json(response);
     } catch (error) {
       console.log("ERROR", error);
     }

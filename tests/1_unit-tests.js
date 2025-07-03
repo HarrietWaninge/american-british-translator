@@ -12,80 +12,99 @@ const {
   testSentencesAmericanToBritish,
   testSentencesAmericanTranslations,
   testSentencesBritishTranslations,
+  spanTranslations,
+  spanTestSentences,
 } = require("./testingData.js");
 const LOCALES = require("../components/constants.js");
 
 suite("Unit Tests", () => {
-  test("Sentence Translation Test", (done) => {
-    console.log("Brit -> Am");
-    for (let i = 0; i < testSentencesBritishToAmerican.length; i++) {
-      assert.equal(
-        translator.translate(
-          testSentencesBritishToAmerican[i],
-          LOCALES.BRITISH_TO_AMERICAN
-        ).translation,
-        testSentencesAmericanTranslations[i]
-      );
-    }
-    console.log("Am -> Brit");
+  for (
+    let i = 0;
+    i <
+    testSentencesAmericanToBritish.length +
+      testSentencesBritishToAmerican.length;
+    i++
+  ) {
+    if (i < testSentencesAmericanToBritish.length) {
+      test(`Translate ${testSentencesBritishToAmerican[i]} to British English`, (done) => {
+        assert.equal(
+          translator.translate(
+            testSentencesBritishToAmerican[i],
+            LOCALES.BRITISH_TO_AMERICAN
+          ).translation,
+          testSentencesAmericanTranslations[i]
+        );
+        done();
+      });
+    } else {
+      let j = i - testSentencesAmericanToBritish.length;
 
-    for (let i = 0; i < testSentencesAmericanToBritish.length; i++) {
-      assert.equal(
-        translator.translate(
-          testSentencesAmericanToBritish[i],
-          LOCALES.AMERICAN_TO_BRITISH
-        ).translation,
-        testSentencesBritishTranslations[i]
-      );
+      test(`Translate ${testSentencesAmericanToBritish[j]} to American English`, (done) => {
+        assert.equal(
+          translator.translate(
+            testSentencesAmericanToBritish[j],
+            LOCALES.AMERICAN_TO_BRITISH
+          ).translation,
+          testSentencesBritishTranslations[j]
+        );
+        done();
+      });
     }
-    done();
-  });
+  }
   suite("Higlight translation tests", function () {
     let browser, page;
     suiteSetup(async function () {
       browser = await puppeteer.launch();
       page = await browser.newPage();
       page.setDefaultTimeout(10000);
-      page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+      await page.goto("http://localhost:3000", {
+        waitUntil: "domcontentloaded",
+      });
     });
+    for (let i = 0; i < 4; i++) {
+      test(`Highlight transition in ${spanTestSentences[i]}`, async function () {
+        let highlightSpans, spanTexts;
+        try {
+          let locale;
+          if (i < 2) {
+            locale = LOCALES.AMERICAN_TO_BRITISH;
+          } else {
+            locale = LOCALES.BRITISH_TO_AMERICAN;
+          }
+          //wait for everything to load
+          await Promise.all([
+            page.waitForSelector("#text-input"),
+            page.waitForSelector("#locale-select"),
+            page.waitForSelector("#translate-btn"),
+          ]);
 
-    test(`should highlight translation for sentence`, async function () {
-      let highlightSpans, spanTexts;
-      try {
-        //wait for everything to load
-        await Promise.all([
-          page.waitForSelector("#text-input"),
-          page.waitForSelector("#locale-select"),
-          page.waitForSelector("#translate-btn"),
-        ]);
-        // type in field, select locale, and click on translate button
-        await page.type("#text-input", testSentencesAmericanToBritish[0]);
-        await page.select("#locale-select", "american-to-british");
-        await page.click("#translate-btn");
+          await page.evaluate(() => {
+            document.querySelector("#text-input").value = "";
+          });
 
-        //wait for response and get check if there are highlight spans
-        await page.waitForSelector("#translated-sentence");
-        highlightSpans = await page.$$("#translated-sentence span.highlight"); //get spans texts
-        spanTexts = await Promise.all(
-          highlightSpans.map((span) => span.evaluate((el) => el.textContent))
-        );
+          await page.type("#text-input", spanTestSentences[i]);
+          await page.select("#locale-select", locale);
+          await page.click("#translate-btn");
 
-        console.log("🟢 Test completed!", highlightSpans, spanTexts);
-      } catch (error) {
-        console.log("🔴 Error:", error.message);
-        throw error;
-      }
+          //wait for response and get check if there are highlight spans
+          await page.waitForSelector("#translated-sentence");
+          await page.waitForFunction(() => {
+            const element = document.querySelector("#translated-sentence");
+            return element && element.textContent.trim().length > 0;
+          });
 
-      chai.assert.isAbove(highlightSpans.length, 0);
-      chai.assert.deepEqual(spanTexts, ["favourite"]);
-    });
+          highlightSpans = await page.$$("#translated-sentence span.highlight"); //get spans texts
+          spanTexts = await Promise.all(
+            highlightSpans.map((span) => span.evaluate((el) => el.textContent))
+          );
+        } catch (error) {
+          console.log("Error:", error.message);
+          throw error;
+        }
+
+        chai.assert.isAbove(highlightSpans.length, 0);
+        chai.assert.deepEqual(spanTexts, spanTranslations[i]);
+      });
+    }
   });
 });
-//});
-
-/*
-Highlight translation in Mangoes are my favorite fruit.
-Highlight translation in I ate yogurt for breakfast.
-Highlight translation in We watched the footie match for a while.
-Highlight translation in Paracetamol takes up to an hour to work.
-*/
