@@ -19,15 +19,7 @@ const translateHandler = async () => {
 
   const config = {
     data: "translation",
-    render: function (translatedWords, finalSentence) {
-      for (let i = 0; i < translatedWords.length; i++) {
-        finalSentence = finalSentence.replace(
-          translatedWords[i],
-          '<span class = "highlight">' + translatedWords[i] + "</span>"
-        );
-      }
-      return finalSentence;
-    },
+    render: 
   };
 
   if (parsed.error) {
@@ -35,10 +27,9 @@ const translateHandler = async () => {
     return;
   }
 
-  translatedArea.innerHTML = config.render(
-    parsed["translatedWords"],
-    parsed[config.data]
-  );
+  translatedArea.innerHTML = 
+    parsed["translation"]
+  
 
   return;
 };

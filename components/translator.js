@@ -3,16 +3,12 @@ const translationRules = require("./translation-rules");
 
 class Translator {
   translate(text, locale) {
-    console.log("text:", text);
     let inputError = this.checkInput(text, locale);
     if (inputError.error) return inputError;
 
     let suspects = this.findSuspects(text);
-    // console.log("susp:", suspects);
     let translationObject = this.getTranslationObject(suspects, locale);
-    //console.log("translObj", translationObject);
     let response = this.buildTranslationReturn(text, translationObject);
-    // console.log("resp:", response);
     return response;
   }
 
@@ -71,14 +67,13 @@ class Translator {
   }
 
   buildTranslationReturn(text, translationObject) {
-    //for clarity
-    //console.log(translationObject);
-    //  console.log("FINAL TRANSLOBJ", translationObject);
-    let { toBeTranslated, alreadyGreat } = translationObject;
-    let result = { text, translation: "", translatedWords: [] };
+    let { toBeTranslated } = translationObject;
+    let result = { text, translation: "" };
     let translation = text;
     //if there is nothing to translate
     if (toBeTranslated.words.length == 0) {
+      //IN THE FCC FINAL VERSION, THE APP MADE A DESTICTION IF THERE WHERE ANY FROM-LOCALE-WORDS IN THE TRANSLATED SENTENCE.
+      //IN THE END THIS DIDN'T SEEM TO BE NECESSARY.
       //   //if there is something in 'already great'
       //   if (alreadyGreat.length > 0) {
       //     result.translation = "Everything looks good to me!";
@@ -93,14 +88,11 @@ class Translator {
       for (let i = 0; i < toBeTranslated.words.length; i++) {
         translation = translation.replace(
           toBeTranslated.words[i],
-          toBeTranslated.translations[i]
+          `<span class="highlight">${toBeTranslated.translations[i]}</span>`
         );
-        //push new word in array for coloring
-        result.translatedWords.push(toBeTranslated.translations[i]);
       }
       result.translation = translation;
     }
-    // console.log("RESULT:", result);
     return result;
   }
 }
